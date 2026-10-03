@@ -1,0 +1,1310 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0b1726" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23087f78'/%3E%3Cpath d='M19 18h26v7H35v22h-7V25H19z' fill='white'/%3E%3C/svg%3E" />
+  <title>YourTurn — accessible call companion</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #17283b;
+      --muted: #66778a;
+      --paper: #f4f7f9;
+      --white: #ffffff;
+      --line: #dce5eb;
+      --nav: #0b1726;
+      --nav-soft: #15263a;
+      --nav-muted: #a7b6c5;
+      --teal: #087f78;
+      --teal-dark: #06645f;
+      --teal-pale: #e5f5f2;
+      --blue-pale: #edf3fb;
+      --green: #16734b;
+      --red: #b84545;
+      --focus: #f0bd47;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; background: var(--paper); color: var(--ink); }
+    button, select, textarea, input { font: inherit; }
+    button:focus-visible, select:focus-visible, textarea:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+    .app { min-height: 100vh; display: grid; grid-template-columns: 248px minmax(0, 1fr); }
+    .sidebar { background: var(--nav); color: white; padding: 26px 18px; display: flex; flex-direction: column; gap: 26px; }
+    .brand { display: flex; align-items: center; gap: 11px; padding: 0 7px; }
+    .brand-mark { width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center; background: #c8f3e9; color: #07544f; font-size: 17px; font-weight: 850; }
+    .brand-name { font-size: 18px; font-weight: 760; letter-spacing: -.04em; }
+    .brand-kicker { margin-top: 2px; font-size: 10px; color: var(--nav-muted); letter-spacing: .14em; text-transform: uppercase; }
+    .side-label { color: #8193a6; font-size: 10px; font-weight: 750; letter-spacing: .13em; text-transform: uppercase; padding: 0 10px; margin-bottom: 8px; }
+    .nav-item { width: 100%; border: 0; border-radius: 10px; color: var(--nav-muted); background: transparent; text-align: left; padding: 12px 11px; cursor: pointer; display: flex; align-items: center; gap: 12px; font-size: 13px; }
+    .nav-item.active { color: white; background: var(--nav-soft); font-weight: 650; }
+    .nav-icon { width: 18px; text-align: center; color: #c5d3de; font-size: 15px; }
+    .profile-card { margin-top: auto; border: 1px solid #314156; border-radius: 14px; padding: 14px; }
+    .profile-top { display: flex; align-items: center; gap: 10px; }
+    .avatar { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: #e4cda9; color: #4c3924; font-weight: 760; font-size: 12px; }
+    .profile-name { font-size: 12px; font-weight: 700; }
+    .profile-desc { margin-top: 3px; color: var(--nav-muted); font-size: 10px; }
+    .profile-pref { color: #d8e2e9; margin-top: 13px; font-size: 11px; line-height: 1.55; }
+    .main { min-width: 0; padding: 34px clamp(18px, 4vw, 58px) 48px; }
+    .main-inner { width: min(1120px, 100%); margin: auto; }
+    .topline { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 30px; }
+    .eyebrow { color: var(--teal-dark); font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    h1 { margin: 8px 0 5px; font-size: clamp(27px, 4vw, 38px); line-height: 1.12; letter-spacing: -.04em; }
+    .subtitle { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.55; }
+    .top-action { border: 1px solid var(--line); background: var(--white); color: var(--ink); border-radius: 10px; padding: 10px 13px; font-size: 12px; font-weight: 650; cursor: pointer; }
+    .demo-banner { display: flex; align-items: flex-start; gap: 11px; border: 1px solid #d9e7e8; border-radius: 12px; padding: 12px 14px; color: #395363; background: #eef7f6; font-size: 12px; line-height: 1.5; margin-bottom: 21px; }
+    .demo-banner strong { color: #155c59; }
+    .layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; align-items: start; }
+    .column { display: grid; gap: 16px; }
+    .panel { background: var(--white); border: 1px solid var(--line); border-radius: 16px; }
+    .call-head { padding: 17px 19px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--line); }
+    .caller { display: flex; align-items: center; gap: 12px; }
+    .caller-icon { width: 42px; height: 42px; background: #f0f3f7; border-radius: 13px; display: grid; place-items: center; color: #36516b; font-size: 20px; }
+    .caller-name { font-size: 14px; font-weight: 750; }
+    .caller-sub { margin-top: 4px; color: var(--muted); font-size: 11px; }
+    .status { display: inline-flex; align-items: center; gap: 7px; background: #eef3f6; border-radius: 99px; color: #5c7084; font-size: 10px; font-weight: 750; padding: 7px 10px; text-transform: uppercase; letter-spacing: .06em; white-space: nowrap; }
+    .status.live { color: #146e48; background: #e7f5ed; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: #9eacb9; }
+    .status.live .dot { background: #29a16b; box-shadow: 0 0 0 3px #d0ecdc; }
+    .call-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 12px 19px; border-bottom: 1px solid var(--line); }
+    .tool-label { color: var(--muted); font-size: 11px; margin-right: auto; }
+    .tool-button { border: 1px solid var(--line); background: white; color: #344c61; border-radius: 9px; padding: 8px 10px; font-size: 11px; font-weight: 650; cursor: pointer; }
+    .tool-button:hover, .top-action:hover, .suggestion:hover { border-color: #8bb5b1; background: #f7fbfa; }
+    .tool-button[aria-pressed="true"] { color: var(--teal-dark); background: var(--teal-pale); border-color: #b6ded7; }
+    .sign-panel { padding: 16px 19px; background: #f8fbfc; border-bottom: 1px solid var(--line); }
+    .sign-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 11px; }
+    .sign-heading strong { font-size: 12px; }
+    .sign-heading span { color: var(--muted); font-size: 10px; }
+    .sign-layout { display: grid; grid-template-columns: minmax(180px, .82fr) minmax(0, 1.18fr); gap: 14px; align-items: stretch; }
+    .camera-frame { position: relative; min-height: 150px; overflow: hidden; border: 1px solid #cbd8e0; border-radius: 11px; background: #17283b; display: grid; place-items: center; }
+    .camera-frame video { width: 100%; height: 100%; min-height: 150px; position: absolute; inset: 0; object-fit: cover; transform: scaleX(-1); }
+    .camera-frame canvas { width: 100%; height: 100%; min-height: 150px; position: absolute; inset: 0; object-fit: cover; transform: scaleX(-1); z-index: 2; pointer-events: none; }
+    .camera-placeholder { max-width: 205px; color: #e2ecf2; text-align: center; font-size: 11px; line-height: 1.5; padding: 14px; position: relative; z-index: 1; }
+    .camera-placeholder span { display: block; font-size: 22px; margin-bottom: 7px; }
+    .camera-frame.camera-on .camera-placeholder { display: none; }
+    .camera-copy { display: grid; align-content: start; gap: 8px; }
+    .camera-actions { display: flex; flex-wrap: wrap; gap: 7px; }
+    .recognition-note { color: #765d2e; background: #fff8e8; border: 1px solid #efe0b9; border-radius: 8px; padding: 8px 9px; font-size: 10px; line-height: 1.45; }
+    .candidate-wrap { display: grid; gap: 7px; }
+    .candidate-wrap textarea { min-height: 57px; background: white; }
+    .candidate-label { color: #52677b; font-size: 10px; font-weight: 700; }
+    .camera-status { color: var(--muted); font-size: 10px; min-height: 14px; }
+    .asl-readout { display: flex; align-items: center; gap: 12px; border: 1px solid var(--line); border-radius: 10px; background: white; padding: 8px 10px; }
+    .asl-letter { min-width: 34px; color: var(--teal-dark); font-size: 24px; font-weight: 800; line-height: 1; text-align: center; }
+    .asl-meta { min-width: 0; color: #40576a; font-size: 10px; line-height: 1.45; }
+    .asl-meta strong { display: block; color: var(--ink); font-size: 10px; }
+    .spelled-text { min-height: 40px; border: 1px solid var(--line); background: white; border-radius: 9px; padding: 9px 10px; font: 600 15px/1.4 ui-monospace, SFMono-Regular, Consolas, monospace; letter-spacing: .06em; overflow-wrap: anywhere; }
+    .spelled-empty { color: #8795a2; font: 10px/1.5 Inter, ui-sans-serif, system-ui, sans-serif; letter-spacing: 0; }
+    .conversation { min-height: 282px; max-height: 380px; overflow-y: auto; padding: 21px 19px; display: flex; flex-direction: column; gap: 16px; scroll-behavior: smooth; }
+    .conversation-empty { margin: auto; width: min(340px, 100%); text-align: center; color: var(--muted); font-size: 13px; line-height: 1.6; }
+    .empty-glyph { margin: 0 auto 12px; width: 44px; height: 44px; border-radius: 50%; background: var(--blue-pale); color: #456b91; display: grid; place-items: center; font-size: 19px; }
+    .message { max-width: 84%; display: grid; gap: 5px; animation: enter .22s ease-out; }
+    @keyframes enter { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+    .message.user { align-self: flex-end; justify-items: end; }
+    .message-meta { display: flex; align-items: center; gap: 7px; color: #728296; font-size: 10px; font-weight: 700; }
+    .message-bubble { background: #f0f4f7; padding: 12px 14px; border-radius: 5px 14px 14px 14px; color: #233a50; font-size: 14px; line-height: 1.5; }
+    .message.user .message-bubble { background: var(--teal-pale); border-radius: 14px 5px 14px 14px; color: #174c49; }
+    .translation { color: #6c7a88; font-size: 11px; line-height: 1.45; padding: 0 2px; }
+    .divider-note { align-self: center; color: #8997a4; background: white; padding: 0 9px; font-size: 10px; margin: 0 0 -4px; }
+    .reply-area { border-top: 1px solid var(--line); padding: 17px 19px 19px; }
+    .reply-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+    .reply-heading strong { font-size: 12px; }
+    .reply-heading span { color: var(--muted); font-size: 10px; }
+    .suggestions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+    .suggestion { border: 1px solid #d3e1e5; background: #fbfdfd; border-radius: 9px; padding: 8px 10px; font-size: 11px; color: #315363; cursor: pointer; text-align: left; line-height: 1.35; }
+    .composer { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 9px; align-items: end; }
+    textarea { width: 100%; min-height: 76px; resize: vertical; border: 1px solid #cbd8e0; border-radius: 11px; padding: 11px 12px; color: var(--ink); background: white; font-size: 13px; line-height: 1.45; }
+    textarea::placeholder { color: #8a98a5; }
+    .send-button, .primary-button { border: 0; border-radius: 10px; background: var(--teal); color: white; padding: 12px 15px; font-size: 12px; font-weight: 750; cursor: pointer; min-height: 42px; }
+    .send-button:hover, .primary-button:hover { background: var(--teal-dark); }
+    .send-button:disabled { cursor: not-allowed; background: #a6bab8; }
+    .composer-foot { display: flex; justify-content: space-between; gap: 8px; align-items: center; margin-top: 8px; color: var(--muted); font-size: 10px; }
+    .text-button { border: 0; padding: 2px; color: var(--teal-dark); background: transparent; font-weight: 700; font-size: 10px; cursor: pointer; }
+    .side-panel { overflow: hidden; }
+    .side-section { padding: 17px; border-bottom: 1px solid var(--line); }
+    .side-section:last-child { border-bottom: 0; }
+    .side-title { margin: 0 0 12px; color: #243c51; font-size: 12px; font-weight: 770; }
+    .toggle-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .toggle-copy strong { display: block; font-size: 11px; }
+    .toggle-copy small { display: block; color: var(--muted); font-size: 10px; line-height: 1.4; margin-top: 4px; }
+    .switch { appearance: none; width: 38px; height: 22px; flex: 0 0 38px; border-radius: 99px; background: #c9d3dc; position: relative; cursor: pointer; transition: background .15s ease; }
+    .switch::after { content: ""; position: absolute; width: 16px; height: 16px; border-radius: 50%; background: white; left: 3px; top: 3px; transition: transform .15s ease; }
+    .switch:checked { background: var(--teal); }
+    .switch:checked::after { transform: translateX(16px); }
+    .field-label { display: block; margin: 14px 0 6px; font-size: 10px; font-weight: 700; color: #52677b; }
+    select { width: 100%; border: 1px solid var(--line); border-radius: 9px; background: white; padding: 9px 10px; color: var(--ink); font-size: 11px; }
+    .voice-note { color: var(--muted); font-size: 10px; line-height: 1.5; margin-top: 8px; }
+    .privacy { display: flex; align-items: flex-start; gap: 9px; color: #44636b; font-size: 10px; line-height: 1.5; background: #f0f8f6; border-radius: 10px; padding: 11px; }
+    .privacy b { color: #215650; }
+    .pace-options { display: grid; gap: 7px; }
+    .pace-option { border: 1px solid var(--line); background: white; border-radius: 9px; text-align: left; padding: 9px 10px; color: #40576a; font-size: 10px; cursor: pointer; }
+    .pace-option[aria-pressed="true"] { border-color: #9ecdc7; background: #eef8f6; color: #155c59; font-weight: 700; }
+    .summary { border-color: #b9d8d0; background: #f1faf7; }
+    .summary-inner { padding: 16px; }
+    .summary h2 { margin: 0 0 10px; font-size: 13px; }
+    .summary p { margin: 6px 0; color: #405d58; font-size: 11px; line-height: 1.5; }
+    .summary ul { margin: 7px 0 0; padding-left: 17px; color: #405d58; font-size: 11px; line-height: 1.65; }
+    .summary-actions { margin-top: 12px; }
+    .reset-button { border: 1px solid #b9d8d0; border-radius: 8px; color: #155c59; background: white; padding: 8px 10px; font-size: 10px; font-weight: 700; cursor: pointer; }
+    .hidden { display: none !important; }
+    .toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); background: #132739; color: white; border-radius: 10px; padding: 11px 15px; font-size: 12px; box-shadow: 0 5px 18px #10203025; z-index: 5; }
+    .footnote { margin-top: 17px; color: #7b8997; font-size: 10px; line-height: 1.5; }
+    @media (max-width: 980px) { .layout { grid-template-columns: minmax(0, 1fr) 270px; gap: 13px; } .main { padding-left: 22px; padding-right: 22px; } }
+    @media (max-width: 760px) { .app { grid-template-columns: 1fr; } .sidebar { padding: 13px 16px; flex-direction: row; align-items: center; gap: 13px; position: sticky; top: 0; z-index: 3; } .brand { margin-right: auto; } .sidebar nav, .profile-card, .side-label { display: none; } .main { padding: 23px 15px 32px; } .topline { margin-bottom: 19px; align-items: flex-start; } .top-action { padding: 8px 9px; } .layout { grid-template-columns: 1fr; } .side-panel { display: grid; grid-template-columns: 1fr 1fr; } .side-section:nth-child(odd) { border-right: 1px solid var(--line); } .side-section:nth-child(2) { border-bottom: 1px solid var(--line); } .side-section:nth-child(3), .side-section:nth-child(4) { border-bottom: 0; } .conversation { min-height: 245px; } }
+    @media (max-width: 480px) { .side-panel { grid-template-columns: 1fr; } .side-section:nth-child(odd) { border-right: 0; } .side-section:nth-child(3) { border-bottom: 1px solid var(--line); } .top-action { font-size: 10px; } .composer { grid-template-columns: 1fr; } .send-button { justify-self: end; } .message { max-width: 94%; } }
+    @media (max-width: 480px) { .sign-layout { grid-template-columns: 1fr; } .camera-frame { min-height: 185px; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+  </style>
+  <style>
+    /* Refined accessibility-first product system */
+    :root {
+      --ink: #17283b;
+      --muted: #53677b;
+      --paper: #f4f7fa;
+      --line: #d7e1e8;
+      --teal: #08756f;
+      --teal-dark: #075a56;
+      --teal-pale: #e8f5f2;
+      --focus: #e5aa19;
+      font-size: 16px;
+    }
+    body { color: var(--ink); background: var(--paper); line-height: 1.5; }
+    .app { grid-template-columns: 250px minmax(0, 1fr); }
+    .sidebar { position: sticky; top: 0; height: 100vh; min-height: 620px; padding: 28px 18px 22px; gap: 28px; }
+    .nav-item { min-height: 46px; padding: 12px; font-size: 14px; border: 1px solid transparent; }
+    .nav-item:hover { color: white; background: #14283b; }
+    .nav-item.active { border-color: #2d465d; }
+    .profile-desc, .profile-pref { font-size: 12px; }
+    .main { padding: 38px clamp(20px, 4.4vw, 64px) 54px; }
+    .main-inner { width: min(1240px, 100%); }
+    .topline { margin-bottom: 25px; }
+    .eyebrow { font-size: 12px; letter-spacing: .1em; }
+    h1 { margin: 7px 0 8px; font-size: clamp(30px, 3.5vw, 40px); }
+    .subtitle { max-width: 650px; font-size: 16px; }
+    .top-action { min-height: 46px; padding: 11px 16px; font-size: 14px; }
+    .demo-banner { align-items: center; margin-bottom: 20px; padding: 14px 16px; font-size: 13px; }
+    .layout { grid-template-columns: minmax(0, 1fr) 320px; gap: 18px; }
+    .column { gap: 18px; }
+    .panel { border-radius: 16px; box-shadow: 0 3px 14px rgb(23 40 59 / 4%); }
+    .call-head { min-height: 80px; padding: 18px 21px; }
+    .caller-icon { width: 46px; height: 46px; background: #eaf1f7; font-size: 21px; }
+    .caller-name { font-size: 16px; }
+    .caller-sub { font-size: 13px; }
+    .status { font-size: 11px; letter-spacing: .02em; text-transform: none; }
+    .call-tools { gap: 9px; padding: 13px 21px; }
+    .tool-label { font-size: 12px; }
+    .tool-button { min-height: 42px; padding: 9px 12px; font-size: 13px; transition: background .15s ease, border-color .15s ease, transform .15s ease; }
+    .tool-button:hover, .top-action:hover, .suggestion:hover { border-color: #86b7b2; background: #f3faf8; }
+    .tool-button:active, .top-action:active, .suggestion:active, .pace-option:active { transform: translateY(1px); }
+    button:disabled { cursor: not-allowed; opacity: .62; }
+    .sign-panel { padding: 18px 21px; }
+    .sign-heading strong { font-size: 14px; }
+    .sign-heading span, .camera-status { font-size: 12px; }
+    .recognition-note { font-size: 12px; }
+    .candidate-label { font-size: 12px; }
+    .camera-frame, .camera-frame video, .camera-frame canvas { min-height: 180px; }
+    .asl-meta, .asl-meta strong { font-size: 12px; }
+    .spelled-text { min-height: 46px; font-size: 17px; }
+    .conversation { min-height: 330px; max-height: 450px; padding: 24px 22px; gap: 18px; }
+    .conversation-empty { font-size: 15px; }
+    .message-meta { font-size: 12px; }
+    .message-bubble { padding: 13px 16px; font-size: 15px; line-height: 1.6; }
+    .translation { font-size: 13px; }
+    .reply-area { padding: 20px 21px 22px; }
+    .reply-heading strong { font-size: 14px; }
+    .reply-heading span, .composer-foot { font-size: 12px; }
+    .suggestions { gap: 9px; margin-bottom: 14px; }
+    .suggestion { min-height: 42px; padding: 9px 12px; font-size: 13px; }
+    textarea { min-height: 92px; padding: 12px 13px; font-size: 15px; line-height: 1.5; }
+    .send-button, .primary-button { min-height: 46px; padding: 12px 17px; font-size: 14px; }
+    .side-section { padding: 20px; }
+    .side-title { margin-bottom: 14px; font-size: 15px; }
+    .toggle-copy strong { font-size: 13px; }
+    .toggle-copy small, .voice-note { font-size: 12px; line-height: 1.5; }
+    .toggle-row { min-height: 56px; }
+    .switch { width: 52px; height: 44px; flex-basis: 52px; }
+    .switch::after { width: 28px; height: 28px; left: 8px; top: 8px; }
+    .switch:checked::after { transform: translateX(8px); }
+    .field-label { margin: 16px 0 7px; font-size: 12px; }
+    select { min-height: 44px; padding: 10px 11px; font-size: 13px; }
+    .privacy { font-size: 12px; padding: 12px; }
+    .pace-options { gap: 8px; }
+    .pace-option { min-height: 42px; padding: 10px 12px; font-size: 12px; }
+    .summary-inner { padding: 20px; }
+    .summary h2 { font-size: 16px; }
+    .summary p, .summary ul { font-size: 13px; }
+    .reset-button { min-height: 42px; padding: 10px 12px; font-size: 12px; }
+    .footnote { margin-top: 18px; font-size: 12px; }
+    .text-button { min-height: 32px; padding: 5px 8px; font-size: 12px; }
+    .feedback-card { margin-top: 18px; padding: 17px; border: 1px solid var(--line); border-radius: 13px; background: white; }
+    .feedback-card h3 { margin: 0 0 5px; font-size: 15px; }
+    .feedback-copy, .feedback-note { margin: 0 0 12px; color: var(--muted); font-size: 12px; }
+    .rating-group { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; padding: 0; border: 0; }
+    .rating-group legend { margin-bottom: 8px; color: var(--ink); font-size: 13px; font-weight: 700; }
+    .rating-option { position: relative; }
+    .rating-option input { position: absolute; opacity: 0; inset: 0; }
+    .rating-option span { display: grid; place-items: center; min-width: 44px; min-height: 44px; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); background: #fff; font-size: 14px; font-weight: 700; cursor: pointer; }
+    .rating-option input:checked + span { border-color: var(--teal); color: var(--teal-dark); background: var(--teal-pale); }
+    .rating-option input:focus-visible + span { outline: 3px solid var(--focus); outline-offset: 2px; }
+    .feedback-card textarea { min-height: 68px; }
+    .feedback-submit { margin-top: 10px; }
+    .feedback-thanks { color: #155c59; font-size: 13px; font-weight: 650; }
+    @media (max-width: 1060px) {
+      .layout { grid-template-columns: minmax(0, 1fr); }
+      .side-panel { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .side-section:nth-child(odd) { border-right: 1px solid var(--line); }
+      .side-section:nth-child(3), .side-section:nth-child(4) { border-bottom: 0; }
+    }
+    @media (max-width: 760px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { position: sticky; height: auto; min-height: 0; padding: 12px 15px; }
+      .sidebar nav, .profile-card, .side-label { display: none; }
+      .main { padding: 25px 16px 36px; }
+      .topline { align-items: flex-start; }
+      .layout { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 560px) {
+      .topline { flex-direction: column; }
+      .top-action { width: 100%; }
+      .call-head { align-items: flex-start; flex-direction: column; }
+      .call-tools { padding: 12px 15px; }
+      .tool-label { flex-basis: 100%; }
+      .conversation { min-height: 290px; padding: 18px 15px; }
+      .reply-area { padding: 17px 15px; }
+      .side-panel { grid-template-columns: 1fr; }
+      .side-section:nth-child(odd) { border-right: 0; }
+      .side-section:nth-child(3) { border-bottom: 1px solid var(--line); }
+      .sign-panel { padding: 15px; }
+      .sign-layout { grid-template-columns: 1fr; }
+      .composer { grid-template-columns: 1fr; }
+      .send-button { justify-self: stretch; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .tool-button, .top-action, .suggestion, .pace-option { transition: none; }
+    }
+  </style>
+  <style>
+    /* Harbor: calm navy, clear teal actions, and warm focus contrast. */
+    :root {
+      --ink: #183047;
+      --muted: #546b7f;
+      --paper: #f2f6f8;
+      --line: #d5e1e8;
+      --nav: #102b40;
+      --nav-soft: #1b3a50;
+      --nav-muted: #c2d1dc;
+      --teal: #2563eb;
+      --teal-dark: #1d4ed8;
+      --teal-pale: #eaf2ff;
+      --blue-pale: #eaf1f8;
+      --focus: #e7ad2d;
+    }
+    body { background: #f2f6f8; color: var(--ink); }
+    .app { grid-template-columns: 264px minmax(0, 1fr); }
+    .sidebar { background: var(--nav); }
+    .brand-mark { background: #e8f1ff; color: #174ea6; }
+    .sidebar nav { display: grid; gap: 7px; }
+    .sidebar nav .side-label { margin: 0 0 3px; }
+    .nav-item {
+      display: grid;
+      grid-template-columns: 24px minmax(0, 1fr);
+      align-items: center;
+      gap: 10px;
+      min-height: 62px;
+      padding: 10px 11px;
+      border: 1px solid transparent;
+      border-radius: 11px;
+      color: var(--nav-muted);
+    }
+    .nav-item:hover { border-color: #38556a; background: #18354b; color: white; }
+    .nav-item.active { border-color: #31576d; background: var(--nav-soft); color: white; }
+    .nav-icon { grid-row: 1; grid-column: 1; width: 24px; color: #d4e5ed; }
+    .nav-copy { grid-column: 2; display: grid; gap: 3px; min-width: 0; }
+    .nav-title { color: inherit; font-size: 14px; font-weight: 730; line-height: 1.25; }
+    .nav-description { color: #b6c8d4; font-size: 12px; font-weight: 450; line-height: 1.35; }
+    .nav-item.active .nav-description { color: #d0e0e7; }
+    .main { padding-top: 34px; }
+    .layout { grid-template-columns: minmax(0, 1fr) 326px; gap: 20px; }
+    .call-head, .call-tools, .reply-area { padding-left: 22px; padding-right: 22px; }
+    .panel { border-color: #d7e1e8; box-shadow: 0 4px 18px rgb(16 43 64 / 5%); }
+    .side-panel { align-self: start; }
+    .side-section { padding: 19px 20px; }
+    .side-title { color: #203c52; }
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      min-height: 58px;
+      margin: 0 -7px;
+      padding: 7px;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background .15s ease, border-color .15s ease;
+    }
+    .toggle-row:hover { background: #f4f8fa; border-color: #e3ebef; }
+    .toggle-row:focus-within { outline: 3px solid var(--focus); outline-offset: 2px; }
+    .toggle-copy { display: grid; gap: 3px; min-width: 0; }
+    .switch {
+      appearance: none;
+      position: relative;
+      flex: 0 0 44px;
+      width: 44px;
+      height: 24px;
+      margin: 0;
+      border-radius: 99px;
+      background: #aab9c5;
+      cursor: pointer;
+      transition: background .16s ease;
+    }
+    .switch::after {
+      position: absolute;
+      content: "";
+      width: 18px;
+      height: 18px;
+      left: 3px;
+      top: 3px;
+      border-radius: 50%;
+      background: white;
+      box-shadow: 0 1px 3px rgb(16 43 64 / 25%);
+      transition: transform .16s ease;
+    }
+    .switch:checked { background: var(--teal); }
+    .switch:checked::after { transform: translateX(20px); }
+    .switch:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+    .navigation-highlight { outline: 3px solid #4b82df; outline-offset: 3px; transition: outline-color .25s ease; scroll-margin-top: 24px; }
+    .call-head, .sign-panel, .reply-area, .side-section { scroll-margin-top: 24px; }
+    @media (max-width: 1120px) {
+      .layout { grid-template-columns: minmax(0, 1fr); }
+      .side-panel { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .side-section:nth-child(odd) { border-right: 1px solid var(--line); }
+      .side-section:nth-child(3), .side-section:nth-child(4) { border-bottom: 0; }
+    }
+    @media (max-width: 760px) {
+      .app { grid-template-columns: minmax(0, 1fr); }
+      .sidebar {
+        position: sticky;
+        top: 0;
+        z-index: 4;
+        display: grid;
+        grid-template-columns: minmax(150px, 1fr);
+        gap: 10px;
+        height: auto;
+        min-height: 0;
+        padding: 10px 14px;
+        box-shadow: 0 4px 16px rgb(16 43 64 / 12%);
+      }
+      .brand { margin: 0; }
+      .sidebar nav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
+      .sidebar nav .side-label, .profile-card { display: none; }
+      .nav-item { grid-template-columns: 20px minmax(0,1fr); gap: 6px; min-height: 48px; padding: 7px; }
+      .nav-icon { width: 20px; font-size: 14px; }
+      .nav-title { font-size: 12px; }
+      .nav-description { display: none; }
+      .main { padding: 24px 16px 36px; }
+    }
+    @media (max-width: 560px) {
+      .sidebar { padding: 9px 10px; }
+      .nav-item { grid-template-columns: 1fr; justify-items: center; gap: 2px; min-height: 48px; padding: 6px 3px; text-align: center; }
+      .nav-icon { grid-column: 1; grid-row: 1; width: auto; }
+      .nav-copy { grid-column: 1; grid-row: 2; display: block; }
+      .nav-title { font-size: 11px; }
+      .call-head, .call-tools, .reply-area { padding-left: 15px; padding-right: 15px; }
+      .side-panel { grid-template-columns: 1fr; }
+      .side-section:nth-child(odd) { border-right: 0; }
+      .side-section:nth-child(3) { border-bottom: 1px solid var(--line); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .nav-item, .toggle-row, .switch::after { transition: none; }
+    }
+    /* YourTurn blue system and quick-response controls. */
+    .brand-mark { width: 40px; height: 40px; border: 1px solid #b8d2fb; border-radius: 13px; background: #e8f1ff; color: #174ea6; }
+    .brand-mark svg { display: block; width: 27px; height: 27px; }
+    .quick-response-card { border: 1px solid #d7e5f8; border-radius: 11px; background: #f7faff; overflow: hidden; }
+    .quick-response-card summary { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 45px; padding: 10px 12px; color: #1d4e91; font-size: 13px; font-weight: 700; cursor: pointer; list-style: none; }
+    .quick-response-card summary::-webkit-details-marker { display: none; }
+    .quick-response-card summary::after { content: "+"; color: #2563eb; font-size: 20px; line-height: 1; }
+    .quick-response-card[open] summary::after { content: "−"; }
+    .quick-response-content { display: grid; gap: 9px; padding: 0 12px 12px; }
+    .quick-response-help, .quick-response-count, .quick-response-note { margin: 0; color: #536a83; font-size: 12px; line-height: 1.45; }
+    .quick-response-content textarea { min-height: 112px; resize: vertical; border-color: #c9d9ee; font-size: 14px; }
+    .quick-response-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .quick-response-actions .tool-button { min-height: 40px; padding: 9px 12px; color: #174ea6; border-color: #c4d6f1; }
+    .quick-response-actions .tool-button.primary { color: white; background: #2563eb; border-color: #2563eb; }
+    .quick-response-actions .tool-button.primary:hover { background: #1d4ed8; }
+    .quick-response-link { border: 0; padding: 2px 0; background: transparent; color: #1d4ed8; font-size: 12px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+    .quick-response-link:hover { color: #153d91; }
+    .quick-response-status { min-height: 18px; color: #174ea6; font-size: 12px; }
+    @media (prefers-reduced-motion: reduce) { .navigation-highlight { transition: none; } }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" aria-label="Main navigation">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M7 7.5h13a4 4 0 0 1 4 4v6a4 4 0 0 1-4 4h-4.3L10 25v-3.5h-3a4 4 0 0 1-4-4v-6a4 4 0 0 1 4-4Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/>
+            <path d="M10 14.5h1.5l1.6-3 2.3 6 1.7-3h2.4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M24 11.5h1a4 4 0 0 1 4 4v4a4 4 0 0 1-4 4h-.5l-2.5 2v-2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity=".72"/>
+          </svg>
+        </div>
+        <div><div class="brand-name">YourTurn</div><div class="brand-kicker">Communication, your way</div></div>
+      </div>
+      <nav>
+        <div class="side-label">Workspace</div>
+        <button class="nav-item active" type="button" id="callCompanionNav" aria-current="page"><span class="nav-icon" aria-hidden="true">◉</span><span class="nav-copy"><span class="nav-title">Call companion</span><span class="nav-description">Start or resume a demo</span></span></button>
+        <button class="nav-item" type="button" id="phrasesNav"><span class="nav-icon" aria-hidden="true">▤</span><span class="nav-copy"><span class="nav-title">My phrases</span><span class="nav-description">Edit saved responses</span></span></button>
+        <button class="nav-item" type="button" id="profileNav"><span class="nav-icon" aria-hidden="true">◎</span><span class="nav-copy"><span class="nav-title">Communication profile</span><span class="nav-description">Voice, pace, and language</span></span></button>
+      </nav>
+      <div class="profile-card">
+        <div class="profile-top"><div class="avatar" aria-hidden="true">A</div><div><div class="profile-name">Alex Morgan</div><div class="profile-desc">Communication profile</div></div></div>
+        <div class="profile-pref">Preferred voice: Jordan<br />Captions: English<br />Response pace: give me time</div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="topline">
+          <div>
+            <div class="eyebrow">Call companion</div>
+            <h1>Your words. Your pace.</h1>
+            <p class="subtitle">Follow the conversation, shape your reply, and send only what you approve.</p>
+          </div>
+          <button class="top-action" id="startButton" type="button">Start demo call</button>
+        </div>
+
+        <div class="demo-banner" role="note">
+          <span aria-hidden="true">ⓘ</span>
+          <div><strong>Interactive demo call</strong> — this prototype simulates a call on this page. Spoken replies play on this device; they are not sent to a real phone line.</div>
+        </div>
+
+        <div class="layout">
+          <section class="panel" id="callWorkspace" aria-label="Call conversation">
+            <div class="call-head">
+              <div class="caller">
+                <div class="caller-icon" aria-hidden="true">☎</div>
+                <div><div class="caller-name">Northside Clinic</div><div class="caller-sub">Appointment desk · Demo contact</div></div>
+              </div>
+              <div class="status" id="callStatus"><span class="dot"></span><span id="statusText">Ready</span></div>
+            </div>
+            <div class="call-tools">
+              <span class="tool-label" id="callTimer">Start the demo to begin</span>
+              <button class="tool-button" id="repeatButton" type="button" aria-label="Repeat the caller's last message aloud" title="Repeat the caller's last message aloud">↻ Repeat</button>
+              <button class="tool-button" id="translateButton" type="button" aria-pressed="false">Show Spanish</button>
+              <button class="tool-button" id="signInputButton" type="button" aria-expanded="false" aria-controls="signPanel">Use sign input</button>
+            </div>
+            <section class="sign-panel hidden" id="signPanel" aria-label="ASL sign input">
+              <div class="sign-heading"><strong>Sign your reply</strong><span>Start the demo call first; review words before using them</span></div>
+              <div class="sign-layout">
+                <div class="camera-frame" id="cameraFrame">
+                  <video id="cameraVideo" autoplay muted playsinline aria-label="Camera preview"></video>
+                  <canvas id="handOverlay" aria-hidden="true"></canvas>
+                  <div class="camera-placeholder"><span aria-hidden="true">◎</span>Turn on your camera to preview signing space. Video stays in this browser demo.</div>
+                </div>
+                <div class="camera-copy">
+                  <div class="recognition-note"><strong>Fingerspelling mode:</strong> recognizes held ASL letters A–Y except J and Z. Spell a reply one letter at a time; this model does not translate full ASL sentences.</div>
+                  <div class="camera-actions">
+                    <button class="tool-button" id="cameraButton" type="button">Start camera and load model</button>
+                    <button class="tool-button" id="stopCameraButton" type="button" disabled>Stop camera</button>
+                  </div>
+                  <div class="camera-status" id="cameraStatus" role="status">Model loads when you start the camera. Internet is required on first load.</div>
+                  <div class="asl-readout" aria-live="polite"><div class="asl-letter" id="aslLetter">—</div><div class="asl-meta"><strong id="aslConfidence">Waiting for camera</strong><span id="aslHint">Hold one letter steady, then briefly lower your hand between letters.</span></div></div>
+                  <label class="candidate-label" for="spelledText">Fingerspelled reply · tap Space between words</label>
+                  <div class="spelled-text" id="spelledText" aria-live="polite"><span class="spelled-empty">No letters yet</span></div>
+                  <div class="camera-actions">
+                    <button class="tool-button" id="spaceSignButton" type="button">Add space</button>
+                    <button class="tool-button" id="deleteSignButton" type="button">Delete last</button>
+                    <button class="tool-button" id="clearSignButton" type="button">Clear</button>
+                    <button class="tool-button" id="useSpelledTextButton" type="button">Review spelled text</button>
+                  </div>
+                  <div class="candidate-wrap">
+                    <label class="candidate-label" for="candidateText">Your intended reply · edit and confirm</label>
+                    <textarea id="candidateText" aria-label="Review and edit your fingerspelled reply" placeholder="Spell letters, then choose Review spelled text…"></textarea>
+                    <button class="tool-button" id="confirmMeaningButton" type="button">Confirm meaning and prepare reply</button>
+                  </div>
+                </div>
+              </div>
+            </section>
+            <div class="conversation" id="conversation" aria-live="polite" aria-relevant="additions text">
+              <div class="conversation-empty" id="emptyState">
+                <div class="empty-glyph" aria-hidden="true">☏</div>
+                <strong>Your call space is ready.</strong><br />Start the demo to hear a caller, read captions, and try a reply in your own words.
+              </div>
+            </div>
+            <div class="reply-area" id="replyArea">
+              <div class="reply-heading"><strong>Your reply</strong><span id="replyHint">YourTurn offers ideas. You decide what to say.</span><button class="quick-response-link" id="customizeResponsesButton" type="button">Customize quick responses</button></div>
+              <div class="suggestions" id="suggestions" aria-label="Suggested replies"></div>
+              <form id="replyForm">
+                <div class="composer">
+                  <textarea id="replyInput" aria-label="Edit or type your reply" placeholder="Choose a suggestion or type your own reply…" disabled></textarea>
+                  <button class="send-button" id="speakButton" type="submit" disabled>Speak reply</button>
+                </div>
+                <div class="composer-foot"><span>Your introduction plays if enabled. Replies play only when you press “Speak reply.”</span><button class="text-button" id="clearButton" type="button">Clear text</button></div>
+              </form>
+            </div>
+          </section>
+
+          <aside class="panel side-panel" aria-label="Call preferences">
+            <section class="side-section" id="communicationProfile">
+              <h2 class="side-title">Make the call yours</h2>
+              <label class="toggle-row">
+                <span class="toggle-copy"><strong>Start with my intro</strong><small>Explain how you communicate</small></span>
+                <input class="switch" type="checkbox" id="introToggle" checked aria-label="Speak my introduction at the start" />
+              </label>
+              <label class="field-label" for="voiceSelect">Voice for spoken replies</label>
+              <select id="voiceSelect" aria-label="Choose a voice for replies"><option value="">Default device voice</option></select>
+              <div class="voice-note">Your chosen words are read aloud. Voice options depend on this device.</div>
+            </section>
+            <section class="side-section" id="quickResponseSection">
+              <h2 class="side-title">Quick responses</h2>
+              <p class="quick-response-help">Save phrases you use often. They appear beside the call’s suggested replies.</p>
+              <details class="quick-response-card" id="quickResponseDetails">
+                <summary>Customize my phrases</summary>
+                <div class="quick-response-content">
+                  <label class="candidate-label" for="quickResponseInput">One phrase per line · up to 6 phrases</label>
+                  <textarea id="quickResponseInput" maxlength="725" aria-describedby="quickResponseCount quickResponseNote" spellcheck="true"></textarea>
+                  <p class="quick-response-count" id="quickResponseCount" aria-live="polite"></p>
+                  <div class="quick-response-actions">
+                    <button class="tool-button primary" id="saveQuickResponses" type="button">Save phrases</button>
+                    <button class="tool-button" id="resetQuickResponses" type="button">Restore examples</button>
+                  </div>
+                  <p class="quick-response-note" id="quickResponseNote">Saved on this device only. YourTurn will not speak a phrase until you select it and press Speak reply.</p>
+                  <div class="quick-response-status" id="quickResponseStatus" role="status" aria-live="polite"></div>
+                </div>
+              </details>
+            </section>
+            <section class="side-section">
+              <h2 class="side-title">Give me time</h2>
+              <div class="pace-options" role="group" aria-label="Choose how to handle the conversation pace">
+                <button class="pace-option" type="button" aria-pressed="true">Wait until I’m ready</button>
+                <button class="pace-option" type="button" aria-pressed="false">Ask one thing at a time</button>
+                <button class="pace-option" type="button" aria-pressed="false">Repeat the last question</button>
+              </div>
+            </section>
+            <section class="side-section">
+              <h2 class="side-title">Your control, always</h2>
+              <div class="privacy"><span aria-hidden="true">✓</span><span><b>Review before speaking.</b> Suggestions stay on screen until you choose and approve your reply.</span></div>
+            </section>
+            <section class="side-section">
+              <h2 class="side-title">Call language</h2>
+              <label class="toggle-row">
+                <span class="toggle-copy"><strong>Spanish captions</strong><small>Show a sample translation under captions</small></span>
+                <input class="switch" type="checkbox" id="translateToggle" aria-label="Show Spanish translation under captions" />
+              </label>
+              <div class="voice-note">Sample translations are included for this scripted demo.</div>
+            </section>
+          </aside>
+        </div>
+
+        <section class="panel summary hidden" id="summary" aria-live="polite" aria-label="Call summary">
+          <div class="summary-inner">
+            <h2>Call recap</h2>
+            <p>The demo conversation is complete. Review the key details before you leave the call.</p>
+            <ul><li>Appointment: Tuesday at 2:00 PM</li><li>Northside Clinic will text the street address</li><li>Every spoken reply was approved by Alex</li></ul>
+            <div class="summary-actions"><button class="reset-button" id="resetButton" type="button">Try the call again</button></div>
+            <form class="feedback-card" id="feedbackForm">
+              <h3>Help improve YourTurn</h3>
+              <p class="feedback-copy">Was this call experience easy to use? Feedback is optional.</p>
+              <fieldset class="rating-group">
+                <legend>Rate the experience from 1 to 5</legend>
+                <label class="rating-option"><input type="radio" name="rating" value="1" aria-label="1 out of 5" required /><span aria-hidden="true">1</span></label>
+                <label class="rating-option"><input type="radio" name="rating" value="2" aria-label="2 out of 5" /><span aria-hidden="true">2</span></label>
+                <label class="rating-option"><input type="radio" name="rating" value="3" aria-label="3 out of 5" /><span aria-hidden="true">3</span></label>
+                <label class="rating-option"><input type="radio" name="rating" value="4" aria-label="4 out of 5" /><span aria-hidden="true">4</span></label>
+                <label class="rating-option"><input type="radio" name="rating" value="5" aria-label="5 out of 5" /><span aria-hidden="true">5</span></label>
+              </fieldset>
+              <label class="candidate-label" for="feedbackComment">What should we improve? (optional)</label>
+              <textarea id="feedbackComment" name="comment" placeholder="Share a suggestion…"></textarea>
+              <p class="feedback-note">This demo keeps feedback in memory only. It is not sent or used to train an AI.</p>
+              <button class="primary-button feedback-submit" type="submit">Record feedback</button>
+            </form>
+            <p class="feedback-thanks hidden" id="feedbackThanks" role="status" aria-live="polite" tabindex="-1">Thank you. Your feedback is recorded for this demo session.</p>
+          </div>
+        </section>
+        <p class="footnote">Concept prototype. Call captions and recap use a scripted conversation; no real call is recorded or placed. The ASL input recognizes static fingerspelled letters (A–Y except J and Z), not full ASL sentences. Camera inference runs in your browser after model download. Model: <a href="https://huggingface.co/AmimulBmeIU/asl-alphabet-classifier" target="_blank" rel="noreferrer">AmimulBmeIU ASL Alphabet Classifier</a> (MIT license).</p>
+      </div>
+    </main>
+  </div>
+  <div class="toast hidden" role="status" id="toast"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+  <script>
+    (() => {
+      const turns = [
+        {
+          caller: "Hi Alex, this is Maya from Northside Clinic. Is Tuesday at 2 PM a good time for your appointment?",
+          spanish: "Hola, Alex. Soy Maya de la Clínica Northside. ¿Le viene bien el martes a las 2 p. m. para su cita?",
+          replies: ["Yes, Tuesday at 2 PM works for me.", "Could you repeat the appointment time?", "I need a different time."]
+        },
+        {
+          caller: "Tuesday at 2 PM is available. Would you like me to text you the clinic address?",
+          spanish: "Hay disponibilidad el martes a las 2 p. m. ¿Quiere que le envíe por mensaje la dirección de la clínica?",
+          replies: ["Yes, please text me the address.", "No, thank you. I have the address.", "Please say the address slowly."]
+        },
+        {
+          caller: "Done. I’ve sent the address by text. Is there anything else you need today?",
+          spanish: "Listo. Le envié la dirección por mensaje. ¿Necesita algo más hoy?",
+          replies: ["That’s all. Thank you for your help.", "Could you repeat what you sent?", "I’m all set. Goodbye."]
+        },
+        {
+          caller: "You’re welcome, Alex. We’ll see you Tuesday at 2 PM. Have a good day!",
+          spanish: "Con gusto, Alex. Le esperamos el martes a las 2 p. m. ¡Que tenga un buen día!",
+          replies: []
+        }
+      ];
+      const introText = "Hi, I communicate using a speech device. Please give me time to respond.";
+      const conversation = document.getElementById("conversation");
+      const emptyState = document.getElementById("emptyState");
+      const suggestions = document.getElementById("suggestions");
+      const input = document.getElementById("replyInput");
+      const form = document.getElementById("replyForm");
+      const speakButton = document.getElementById("speakButton");
+      const status = document.getElementById("callStatus");
+      const statusText = document.getElementById("statusText");
+      const timer = document.getElementById("callTimer");
+      const summary = document.getElementById("summary");
+      const translateToggle = document.getElementById("translateToggle");
+      const translateButton = document.getElementById("translateButton");
+      const voiceSelect = document.getElementById("voiceSelect");
+      const feedbackForm = document.getElementById("feedbackForm");
+      const feedbackThanks = document.getElementById("feedbackThanks");
+      let started = false;
+      let finished = false;
+      let turnIndex = 0;
+      let lastCaller = "";
+      let startedAt = 0;
+      let clockInterval = null;
+      let spanish = false;
+      let toastTimer;
+      const demoFeedbackEntries = [];
+      const quickResponseStorageKey = "yourturn.quickResponses.v1";
+      const defaultQuickResponses = ["Please give me a moment to respond.", "Could you repeat that, please?", "Please speak a little more slowly."];
+      let quickResponses = readQuickResponses();
+      let cameraStream = null;
+      let visionApi = null;
+      let handLandmarker = null;
+      let aslModel = null;
+      let aslLabels = [];
+      let aslLoading = null;
+      let aslAnimationFrame = null;
+      let aslModelReady = false;
+      let handVotes = [];
+      let spelledBuffer = "";
+      let lastCommittedLetter = null;
+      let noHandFrames = 0;
+
+      function announce(message) {
+        const toast = document.getElementById("toast");
+        toast.textContent = message;
+        toast.classList.remove("hidden");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.add("hidden"), 2600);
+      }
+
+      function normalizeQuickResponses(value) {
+        return String(value || "").split(/\r?\n/).map((phrase) => phrase.trim().slice(0, 120)).filter(Boolean).filter((phrase, index, all) => all.findIndex((item) => item.toLocaleLowerCase() === phrase.toLocaleLowerCase()) === index).slice(0, 6);
+      }
+
+      function readQuickResponses() {
+        try {
+          const stored = localStorage.getItem(quickResponseStorageKey);
+          return stored === null ? [...defaultQuickResponses] : normalizeQuickResponses(JSON.parse(stored));
+        } catch (_) { return [...defaultQuickResponses]; }
+      }
+
+      function updateQuickResponseCount() {
+        const input = document.getElementById("quickResponseInput");
+        const count = normalizeQuickResponses(input.value).length;
+        document.getElementById("quickResponseCount").textContent = `${count} of 6 phrases`;
+      }
+
+      function addMessage(kind, text, translatedText, label) {
+        emptyState?.remove();
+        const wrap = document.createElement("div");
+        wrap.className = `message ${kind}`;
+        const meta = document.createElement("div");
+        meta.className = "message-meta";
+        meta.textContent = label || (kind === "user" ? "You · approved to speak" : "Caller · caption");
+        const bubble = document.createElement("div");
+        bubble.className = "message-bubble";
+        bubble.textContent = text;
+        wrap.append(meta, bubble);
+        if (kind === "caller" && spanish && translatedText) {
+          const translation = document.createElement("div");
+          translation.className = "translation";
+          translation.textContent = `Spanish translation · ${translatedText}`;
+          wrap.append(translation);
+        }
+        conversation.appendChild(wrap);
+        conversation.scrollTop = conversation.scrollHeight;
+      }
+
+      function paintSuggestions(options) {
+        suggestions.replaceChildren();
+        const allOptions = [...new Set([...(options || []), ...quickResponses])];
+        if (!started || finished || !allOptions.length) {
+          suggestions.classList.add("hidden");
+          return;
+        }
+        suggestions.classList.remove("hidden");
+        allOptions.forEach((option) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "suggestion";
+          button.textContent = option;
+          button.addEventListener("click", () => {
+            input.value = option;
+            input.focus();
+            speakButton.disabled = false;
+          });
+          suggestions.appendChild(button);
+        });
+      }
+
+      function showCallerTurn(index) {
+        const turn = turns[index];
+        if (!turn) return;
+        lastCaller = turn.caller;
+        addMessage("caller", turn.caller, turn.spanish);
+        paintSuggestions(turn.replies);
+        input.value = "";
+        input.disabled = false;
+        speakButton.disabled = true;
+        input.placeholder = "Choose a suggestion or type your own reply…";
+        input.focus({ preventScroll: true });
+      }
+
+      function speak(text) {
+        if (!("speechSynthesis" in window)) {
+          announce("Speech playback is unavailable here. The approved reply is shown in the conversation.");
+          return;
+        }
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        const selected = voiceSelect.value;
+        const voice = window.speechSynthesis.getVoices().find((item) => item.name === selected);
+        if (voice) utterance.voice = voice;
+        utterance.rate = 0.92;
+        window.speechSynthesis.speak(utterance);
+      }
+
+      async function loadASLAssets() {
+        if (aslModelReady && aslModel && handLandmarker) return;
+        if (aslLoading) return aslLoading;
+        aslLoading = (async () => {
+          if (!window.tf) {
+            const scriptUrls = [
+              "https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js",
+              "https://unpkg.com/@tensorflow/tfjs@4.22.0/dist/tf.min.js"
+            ];
+            let loaded = false;
+            for (const src of scriptUrls) {
+              const script = document.createElement("script");
+              script.src = src;
+              script.crossOrigin = "anonymous";
+              try {
+                await new Promise((resolve, reject) => {
+                  script.onload = resolve;
+                  script.onerror = () => reject(new Error("CDN unavailable"));
+                  document.head.appendChild(script);
+                });
+                loaded = true;
+                break;
+              } catch { script.remove(); }
+            }
+            if (!loaded || !window.tf) throw new Error("TensorFlow.js could not load from either CDN. Check your internet connection, then retry.");
+          }
+          const visionCandidates = [
+            { module: "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/+esm", wasm: "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm" },
+            { module: "https://unpkg.com/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs", wasm: "https://unpkg.com/@mediapipe/tasks-vision@0.10.14/wasm" }
+          ];
+          let files;
+          let visionError;
+          for (const candidate of visionCandidates) {
+            try {
+              visionApi = await import(candidate.module);
+              files = await visionApi.FilesetResolver.forVisionTasks(candidate.wasm);
+              break;
+            } catch (error) { visionError = error; }
+          }
+          if (!files) throw new Error(`Hand tracking runtime could not load: ${visionError?.message || "CDNs unavailable"}`);
+          const options = {
+            baseOptions: {
+              modelAssetPath: "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
+              delegate: "GPU"
+            },
+            runningMode: "VIDEO",
+            numHands: 1,
+            minHandDetectionConfidence: 0.55,
+            minHandPresenceConfidence: 0.55,
+            minTrackingConfidence: 0.5
+          };
+          try {
+            handLandmarker = await visionApi.HandLandmarker.createFromOptions(files, options);
+          } catch (gpuError) {
+            options.baseOptions.delegate = "CPU";
+            handLandmarker = await visionApi.HandLandmarker.createFromOptions(files, options);
+          }
+          await window.tf.ready();
+          const modelUrl = "https://huggingface.co/AmimulBmeIU/asl-alphabet-classifier/resolve/main/tfjs/model.json";
+          // labels.json is at the repository root, not inside tfjs/.
+          const labelsUrl = "https://huggingface.co/AmimulBmeIU/asl-alphabet-classifier/resolve/main/labels.json";
+          const [model, response] = await Promise.all([
+            window.tf.loadLayersModel(modelUrl),
+            fetch(labelsUrl, { mode: "cors", cache: "force-cache" })
+          ]);
+          if (!response.ok) throw new Error(`Could not load ASL labels (HTTP ${response.status}).`);
+          const labels = await response.json();
+          if (!Array.isArray(labels) || labels.length !== model.outputs[0].shape.at(-1)) {
+            model.dispose();
+            throw new Error("The ASL model and its letter labels do not match.");
+          }
+          aslModel = model;
+          aslLabels = labels;
+          aslModelReady = true;
+        })();
+        try { await aslLoading; } finally { aslLoading = null; }
+      }
+
+      function renderSpelledText() {
+        const target = document.getElementById("spelledText");
+        if (!spelledBuffer) {
+          target.innerHTML = '<span class="spelled-empty">No letters yet</span>';
+          return;
+        }
+        target.textContent = spelledBuffer;
+      }
+
+      function addSpelledLetter(letter) {
+        spelledBuffer += letter;
+        renderSpelledText();
+        document.getElementById("cameraStatus").textContent = `Added ${letter}. Lower your hand briefly, then sign the next letter.`;
+      }
+
+      function stopASLCamera() {
+        if (aslAnimationFrame) cancelAnimationFrame(aslAnimationFrame);
+        aslAnimationFrame = null;
+        if (cameraStream) cameraStream.getTracks().forEach((track) => track.stop());
+        cameraStream = null;
+        aslModelReady = false;
+        const video = document.getElementById("cameraVideo");
+        video.srcObject = null;
+        document.getElementById("cameraFrame").classList.remove("camera-on");
+        const context = document.getElementById("handOverlay").getContext("2d");
+        context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+        document.getElementById("cameraButton").disabled = false;
+        document.getElementById("cameraButton").textContent = "Start camera and load model";
+        document.getElementById("stopCameraButton").disabled = true;
+        document.getElementById("aslLetter").textContent = "—";
+        document.getElementById("aslConfidence").textContent = "Camera stopped";
+        document.getElementById("aslHint").textContent = "Your spelled text is still here for review.";
+        document.getElementById("cameraStatus").textContent = "Camera off. The spelled text stays in the reply composer.";
+        handVotes = [];
+        lastCommittedLetter = null;
+        noHandFrames = 0;
+      }
+
+      async function runASLFrame() {
+        if (!cameraStream || !aslModelReady || !handLandmarker || !aslModel) return;
+        const video = document.getElementById("cameraVideo");
+        const canvas = document.getElementById("handOverlay");
+        const context = canvas.getContext("2d");
+        if (video.readyState < 2) {
+          aslAnimationFrame = requestAnimationFrame(runASLFrame);
+          return;
+        }
+        if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+        }
+        const result = handLandmarker.detectForVideo(video, performance.now());
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        const landmarks = result.landmarks?.[0];
+        if (landmarks) {
+          const drawer = new visionApi.DrawingUtils(context);
+          drawer.drawConnectors(landmarks, visionApi.HandLandmarker.HAND_CONNECTIONS, { color: "#c8f3e9", lineWidth: 3 });
+          drawer.drawLandmarks(landmarks, { color: "#f0bd47", radius: 3 });
+          const features = landmarks.flatMap((point) => [point.x, point.y, point.z]);
+          const tensor = window.tf.tensor2d([features]);
+          const prediction = aslModel.predict(tensor);
+          const scores = await prediction.data();
+          tensor.dispose();
+          prediction.dispose();
+          let top = 0;
+          for (let index = 1; index < scores.length; index += 1) if (scores[index] > scores[top]) top = index;
+          const letter = aslLabels[top];
+          const confidence = scores[top];
+          document.getElementById("aslLetter").textContent = letter;
+          document.getElementById("aslConfidence").textContent = `${Math.round(confidence * 100)}% model confidence`;
+          document.getElementById("aslHint").textContent = "Hold steady to add one letter; lower your hand between letters.";
+          handVotes.push(letter);
+          if (handVotes.length > 9) handVotes.shift();
+          const counts = handVotes.reduce((all, value) => ({ ...all, [value]: (all[value] || 0) + 1 }), {});
+          const stableLetter = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0];
+          const stableCount = counts[stableLetter] || 0;
+          if (handVotes.length >= 7 && stableCount / handVotes.length >= 0.8 && stableLetter !== lastCommittedLetter) {
+            addSpelledLetter(stableLetter);
+            lastCommittedLetter = stableLetter;
+          }
+          noHandFrames = 0;
+        } else {
+          handVotes = [];
+          noHandFrames += 1;
+          if (noHandFrames >= 6) lastCommittedLetter = null;
+          document.getElementById("aslLetter").textContent = "—";
+          document.getElementById("aslConfidence").textContent = "No hand detected";
+          document.getElementById("aslHint").textContent = "Bring one hand into the frame, palm facing the camera.";
+        }
+        aslAnimationFrame = requestAnimationFrame(runASLFrame);
+      }
+
+      async function startASLCamera() {
+        const cameraButton = document.getElementById("cameraButton");
+        const cameraStatus = document.getElementById("cameraStatus");
+        if (!navigator.mediaDevices?.getUserMedia) {
+          cameraStatus.textContent = "Camera access requires a supported browser on HTTPS or localhost.";
+          announce("Open this prototype from HTTPS or localhost to use its camera.");
+          return;
+        }
+        cameraButton.disabled = true;
+        cameraButton.setAttribute("aria-busy", "true");
+        cameraButton.textContent = cameraStream ? "Loading model…" : "Starting camera…";
+        try {
+          if (!cameraStream) {
+            cameraStatus.textContent = "Waiting for camera permission…";
+            cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
+            const video = document.getElementById("cameraVideo");
+            video.srcObject = cameraStream;
+            await video.play();
+            document.getElementById("cameraFrame").classList.add("camera-on");
+            document.getElementById("stopCameraButton").disabled = false;
+          }
+          if (!aslModelReady) {
+            cameraStatus.textContent = "Camera is on. Loading the hand tracker and ASL model…";
+            document.getElementById("aslConfidence").textContent = "Loading ASL model";
+            await loadASLAssets();
+          }
+          document.getElementById("aslConfidence").textContent = "Model is running";
+          cameraStatus.textContent = "ASL model ready. Frames are analyzed in this browser; video is not uploaded.";
+          handVotes = [];
+          lastCommittedLetter = null;
+          noHandFrames = 0;
+          runASLFrame();
+        } catch (error) {
+          if (!cameraStream) {
+            const details = error?.name === "NotAllowedError" ? "Camera permission was denied." : (error?.message || "Could not start the camera.");
+            cameraStatus.textContent = `${details} Allow camera access, then try again.`;
+            announce("Camera could not start.");
+          } else {
+            const details = error?.message || "Could not load the ASL model.";
+            cameraStatus.textContent = `Camera is on, but the model did not load: ${details} Check your internet and press Retry model.`;
+            document.getElementById("aslConfidence").textContent = "Camera ready · model unavailable";
+            cameraButton.textContent = "Retry model";
+            announce("Camera is on. ASL model needs a retry.");
+          }
+        } finally {
+          cameraButton.removeAttribute("aria-busy");
+          if (aslModelReady) {
+            cameraButton.textContent = "ASL model ready";
+            cameraButton.disabled = Boolean(cameraStream);
+          } else {
+            cameraButton.disabled = false;
+            if (!cameraStream) cameraButton.textContent = "Start camera and load model";
+          }
+        }
+      }
+
+      function updateClock() {
+        const seconds = Math.floor((Date.now() - startedAt) / 1000);
+        const min = String(Math.floor(seconds / 60)).padStart(2, "0");
+        const sec = String(seconds % 60).padStart(2, "0");
+        timer.textContent = `Demo call · ${min}:${sec}`;
+      }
+
+      function startCall() {
+        if (started && !finished) return;
+        setWorkspaceActive("callCompanionNav");
+        started = true;
+        finished = false;
+        turnIndex = 0;
+        summary.classList.add("hidden");
+        conversation.replaceChildren();
+        status.classList.add("live");
+        statusText.textContent = "Demo in progress";
+        document.getElementById("startButton").textContent = "Call in progress";
+        document.getElementById("startButton").disabled = true;
+        document.getElementById("startButton").style.opacity = ".65";
+        startedAt = Date.now();
+        updateClock();
+        clearInterval(clockInterval);
+        clockInterval = setInterval(updateClock, 1000);
+        const doIntro = document.getElementById("introToggle").checked;
+        if (doIntro) {
+          addMessage("user", introText, "", "You · your introduction");
+          speak(introText);
+        }
+        showCallerTurn(0);
+      }
+
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const reply = input.value.trim();
+        if (!started || finished || !reply) return;
+        addMessage("user", reply);
+        speak(reply);
+        input.value = "";
+        input.disabled = true;
+        speakButton.disabled = true;
+        suggestions.classList.add("hidden");
+        if (turnIndex === 0 && reply.toLowerCase().includes("different time")) {
+          turns[1].caller = "No problem. I can help find another time. Would you like the clinic to text you some options?";
+          turns[1].spanish = "No hay problema. Puedo ayudarle a encontrar otro horario. ¿Quiere que la clínica le envíe algunas opciones por mensaje?";
+          turns[1].replies = ["Yes, please text me some options.", "Tuesday at 2 PM works after all.", "Please repeat the options."];
+        }
+        turnIndex += 1;
+        if (turnIndex < turns.length) {
+          setTimeout(() => showCallerTurn(turnIndex), 550);
+        } else {
+          setTimeout(() => finishCall(), 550);
+        }
+      });
+
+      function finishCall() {
+        finished = true;
+        started = false;
+        clearInterval(clockInterval);
+        status.classList.remove("live");
+        statusText.textContent = "Demo complete";
+        timer.textContent = "Demo call complete";
+        document.getElementById("startButton").textContent = "Start demo call";
+        document.getElementById("startButton").disabled = false;
+        document.getElementById("startButton").style.opacity = "1";
+        input.disabled = true;
+        speakButton.disabled = true;
+        paintSuggestions([]);
+        summary.classList.remove("hidden");
+        if (cameraStream) stopASLCamera();
+        summary.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+
+      function setWorkspaceActive(navId) {
+        document.querySelectorAll(".sidebar .nav-item").forEach((item) => {
+          item.classList.toggle("active", item.id === navId);
+          if (item.id === navId) item.setAttribute("aria-current", "page");
+          else item.removeAttribute("aria-current");
+        });
+      }
+
+      function setWorkspaceDestination(navId, targetId) {
+        setWorkspaceActive(navId);
+        const target = document.getElementById(targetId);
+        target?.scrollIntoView({ behavior: "smooth", block: "center" });
+        if (target) {
+          target.classList.remove("navigation-highlight");
+          requestAnimationFrame(() => target.classList.add("navigation-highlight"));
+          window.setTimeout(() => target.classList.remove("navigation-highlight"), 1500);
+        }
+        return target;
+      }
+
+      document.getElementById("startButton").addEventListener("click", startCall);
+      document.getElementById("signInputButton").addEventListener("click", (event) => {
+        const panel = document.getElementById("signPanel");
+        const willOpen = panel.classList.contains("hidden");
+        panel.classList.toggle("hidden", !willOpen);
+        event.currentTarget.setAttribute("aria-expanded", String(willOpen));
+        if (willOpen) panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      });
+      document.getElementById("cameraButton").addEventListener("click", startASLCamera);
+      document.getElementById("stopCameraButton").addEventListener("click", stopASLCamera);
+      document.getElementById("spaceSignButton").addEventListener("click", () => {
+        if (spelledBuffer && !spelledBuffer.endsWith(" ")) spelledBuffer += " ";
+        renderSpelledText();
+      });
+      document.getElementById("deleteSignButton").addEventListener("click", () => {
+        spelledBuffer = Array.from(spelledBuffer).slice(0, -1).join("");
+        renderSpelledText();
+      });
+      document.getElementById("clearSignButton").addEventListener("click", () => {
+        spelledBuffer = "";
+        document.getElementById("candidateText").value = "";
+        renderSpelledText();
+      });
+      document.getElementById("useSpelledTextButton").addEventListener("click", () => {
+        if (!spelledBuffer.trim()) {
+          announce("Sign a few letters before reviewing the spelled text.");
+          return;
+        }
+        document.getElementById("candidateText").value = spelledBuffer.trim();
+        document.getElementById("cameraStatus").textContent = "Check the recognized letters and edit any mistakes before confirming your meaning.";
+        document.getElementById("candidateText").focus();
+      });
+      document.getElementById("confirmMeaningButton").addEventListener("click", () => {
+        const candidate = document.getElementById("candidateText").value.trim();
+        if (!candidate) {
+          announce("Review a sample interpretation or enter the words you mean first.");
+          document.getElementById("candidateText").focus();
+          return;
+        }
+        if (!started || finished) {
+          announce("Start the demo call, then confirm your meaning to prepare a reply.");
+          return;
+        }
+        input.value = candidate;
+        input.disabled = false;
+        speakButton.disabled = false;
+        document.getElementById("cameraStatus").textContent = "Meaning confirmed. Review your reply, then choose Speak reply to send it.";
+        input.focus();
+        input.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+      document.getElementById("repeatButton").addEventListener("click", () => {
+        if (!lastCaller) { announce("Start the demo call to hear a caller message."); return; }
+        speak(lastCaller);
+        announce("Repeating the caller’s last message.");
+      });
+      document.getElementById("clearButton").addEventListener("click", () => {
+        input.value = "";
+        speakButton.disabled = true;
+        input.focus();
+      });
+      input.addEventListener("input", () => { speakButton.disabled = !input.value.trim() || input.disabled; });
+      document.getElementById("resetButton").addEventListener("click", () => {
+        finished = false;
+        started = false;
+        turnIndex = 0;
+        lastCaller = "";
+        summary.classList.add("hidden");
+        conversation.innerHTML = '<div class="conversation-empty" id="emptyState"><div class="empty-glyph" aria-hidden="true">☏</div><strong>Your call space is ready.</strong><br />Start the demo to hear a caller, read captions, and try a reply in your own words.</div>';
+        status.classList.remove("live");
+        statusText.textContent = "Ready";
+        timer.textContent = "Start the demo to begin";
+        document.getElementById("startButton").textContent = "Start demo call";
+        document.getElementById("startButton").disabled = false;
+        document.getElementById("startButton").style.opacity = "1";
+        input.value = "";
+        input.disabled = true;
+        speakButton.disabled = true;
+        feedbackForm.reset();
+        feedbackForm.classList.remove("hidden");
+        feedbackThanks.classList.add("hidden");
+        suggestions.classList.remove("hidden");
+        suggestions.replaceChildren();
+        window.speechSynthesis?.cancel();
+        if (cameraStream) stopASLCamera();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+
+      function setSpanish(value) {
+        spanish = value;
+        translateToggle.checked = value;
+        translateButton.setAttribute("aria-pressed", String(value));
+        translateButton.textContent = value ? "Hide Spanish" : "Show Spanish";
+        document.querySelectorAll(".translation").forEach((element) => element.remove());
+        if (value) {
+          document.querySelectorAll(".message.caller").forEach((element, idx) => {
+            const bubble = element.querySelector(".message-bubble");
+            const match = turns.find((turn) => turn.caller === bubble.textContent);
+            if (match?.spanish) {
+              const translation = document.createElement("div");
+              translation.className = "translation";
+              translation.textContent = `Spanish translation · ${match.spanish}`;
+              element.appendChild(translation);
+            }
+          });
+        }
+      }
+      translateToggle.addEventListener("change", () => setSpanish(translateToggle.checked));
+      translateButton.addEventListener("click", () => setSpanish(!spanish));
+
+      document.querySelectorAll(".pace-option").forEach((button) => button.addEventListener("click", () => {
+        document.querySelectorAll(".pace-option").forEach((item) => item.setAttribute("aria-pressed", String(item === button)));
+        announce(`Preference selected: ${button.textContent}.`);
+      }));
+      function openQuickResponseSettings(navId) {
+        if (navId) setWorkspaceDestination(navId, "quickResponseSection");
+        else document.getElementById("quickResponseSection").scrollIntoView({ behavior: "smooth", block: "center" });
+        document.getElementById("quickResponseDetails").open = true;
+        quickResponseInput.focus({ preventScroll: true });
+        announce("Edit up to six saved quick responses. They will appear beside suggested replies.");
+      }
+      document.getElementById("phrasesNav").addEventListener("click", () => openQuickResponseSettings("phrasesNav"));
+      document.getElementById("customizeResponsesButton").addEventListener("click", () => openQuickResponseSettings());
+      const quickResponseInput = document.getElementById("quickResponseInput");
+      quickResponseInput.value = quickResponses.join("\n");
+      updateQuickResponseCount();
+      quickResponseInput.addEventListener("input", updateQuickResponseCount);
+      document.getElementById("saveQuickResponses").addEventListener("click", () => {
+        const rawLines = quickResponseInput.value.split(/\r?\n/).map((phrase) => phrase.trim()).filter(Boolean);
+        if (rawLines.length > 6 || rawLines.some((phrase) => phrase.length > 120)) {
+          document.getElementById("quickResponseStatus").textContent = "Use up to 6 phrases, with no more than 120 characters each.";
+          quickResponseInput.focus();
+          return;
+        }
+        quickResponses = normalizeQuickResponses(quickResponseInput.value);
+        let stored = true;
+        try { localStorage.setItem(quickResponseStorageKey, JSON.stringify(quickResponses)); }
+        catch (_) { stored = false; }
+        paintSuggestions(turns[turnIndex]?.replies || []);
+        document.getElementById("quickResponseStatus").textContent = stored ? "Your quick responses are saved on this device." : "Your browser could not save these phrases. They will stay available until you leave this page.";
+        announce(stored ? "Quick responses saved." : "Quick responses are available for this session only.");
+      });
+      document.getElementById("resetQuickResponses").addEventListener("click", () => {
+        quickResponses = [...defaultQuickResponses];
+        quickResponseInput.value = quickResponses.join("\n");
+        let stored = true;
+        try { localStorage.setItem(quickResponseStorageKey, JSON.stringify(quickResponses)); } catch (_) { stored = false; }
+        updateQuickResponseCount();
+        paintSuggestions(turns[turnIndex]?.replies || []);
+        document.getElementById("quickResponseStatus").textContent = stored ? "Example phrases restored." : "Examples restored for this session; the browser could not save them.";
+        announce("Example quick responses restored.");
+      });
+      document.getElementById("profileNav").addEventListener("click", () => {
+        setWorkspaceDestination("profileNav", "communicationProfile");
+        announce("Communication profile selected. Review your voice, pace, introduction, or language settings.");
+      });
+      document.getElementById("callCompanionNav").addEventListener("click", () => {
+        setWorkspaceDestination("callCompanionNav", "callWorkspace");
+        document.getElementById("startButton").focus({ preventScroll: true });
+      });
+
+      feedbackForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const formData = new FormData(feedbackForm);
+        const entry = {
+          rating: Number(formData.get("rating")),
+          comment: String(formData.get("comment") || "").trim(),
+          createdAt: new Date().toISOString()
+        };
+        if (!entry.rating) {
+          feedbackForm.querySelector('input[name="rating"]').focus();
+          announce("Choose a rating before sending feedback.");
+          return;
+        }
+        demoFeedbackEntries.push(entry);
+        document.dispatchEvent(new CustomEvent("yourturn:feedback", { detail: entry }));
+        feedbackForm.classList.add("hidden");
+        feedbackThanks.classList.remove("hidden");
+        feedbackThanks.focus?.();
+        announce("Thanks. Your feedback is noted for this demo session.");
+      });
+
+      function loadVoices() {
+        if (!("speechSynthesis" in window)) return;
+        const current = voiceSelect.value;
+        const voices = window.speechSynthesis.getVoices();
+        voiceSelect.replaceChildren(new Option("Default device voice", ""));
+        voices.forEach((voice) => {
+          const option = new Option(`${voice.name} · ${voice.lang}`, voice.name);
+          voiceSelect.add(option);
+        });
+        if (current) voiceSelect.value = current;
+      }
+      loadVoices();
+      if ("speechSynthesis" in window) window.speechSynthesis.onvoiceschanged = loadVoices;
+    })();
+  </script>
+</body>
+</html>
